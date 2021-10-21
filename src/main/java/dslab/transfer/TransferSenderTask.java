@@ -103,7 +103,7 @@ public class TransferSenderTask implements Runnable{
 
                 try {
                     ServerSpecificEmail failureMail = TransferSenderPreparation.createEmailDeliveryFailure(email.getFrom(), errorString);
-                    TransferWorker.forwardPool.execute(new TransferSenderTask(failureMail));
+                    TransferServer.getForwardPool().execute(new TransferSenderTask(failureMail));
                 } catch (DomainLookUpException ignored) {}
             }
 

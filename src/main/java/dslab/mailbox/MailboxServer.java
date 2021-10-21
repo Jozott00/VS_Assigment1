@@ -13,13 +13,12 @@ import at.ac.tuwien.dsg.orvell.Shell;
 import at.ac.tuwien.dsg.orvell.StopShellException;
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
-import dslab.mailbox.worker.MailboxWorkerFactory;
-import dslab.mailbox.worker.ProtocolType;
+import dslab.util.worker.ProtocolType;
 import dslab.util.Config;
+import dslab.util.worker.WorkerFactory;
 
 public class MailboxServer implements IMailboxServer, Runnable {
 
-    private Config config;
     private ServerSocket dmtpServerSocket;
     private ServerSocket dmapServerSocket;
     private Shell shell;
@@ -28,6 +27,8 @@ public class MailboxServer implements IMailboxServer, Runnable {
     private final ExecutorService dmtpConnectionPool = Executors.newFixedThreadPool(3);
 
     private Boolean shutdown = false;
+
+    public static Config config;
 
     /**
      * Creates a new server instance.
@@ -38,7 +39,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
      * @param out the output stream to write console output to
      */
     public MailboxServer(String componentId, Config config, InputStream in, PrintStream out) {
-        this.config = config;
+        MailboxServer.config = config;
 
         shell = new Shell(in, out);
         shell.register(this);
@@ -128,6 +129,11 @@ public class MailboxServer implements IMailboxServer, Runnable {
             "-----");
     }
 
+    @Command
+    public void listUsers() {
+        System.out.println(String.join("\n", new Config(config.getString("users.config")).listKeys()));
+    }
+
 
     private Thread getRequestLoopThread(ProtocolType type) {
         return new Thread(() -> {
@@ -145,7 +151,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
                     throw new RuntimeException("Error accepting client connection", e);
                 }
 
-                Runnable worker = MailboxWorkerFactory.createMailboxWorker(newConn, type);
+                Runnable worker = WorkerFactory.createMailboxWorker(newConn, type);
 
                 if(type == ProtocolType.DMAP)
                     dmapConnectionPool.execute(worker);

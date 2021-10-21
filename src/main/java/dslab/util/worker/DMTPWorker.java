@@ -1,6 +1,8 @@
 package dslab.util.worker;
 
+import dslab.exception.ExecutionStopException;
 import dslab.util.protocolParser.DMTPInterpreter;
+import dslab.util.protocolParser.IProtocolInterpreter;
 import dslab.util.protocolParser.ProtocolParseException;
 import dslab.util.protocolParser.listener.DMTPListener;
 import dslab.util.sockcom.SockCom;
@@ -8,59 +10,40 @@ import dslab.util.sockcom.SockCom;
 import java.io.IOException;
 import java.net.Socket;
 
-public abstract class DMTPWorker extends DMTPListener implements Runnable {
+public abstract class DMTPWorker extends Worker implements DMTPListener {
 
-    protected final Socket clientSocket;
-    protected SockCom comm;
-    protected DMTPInterpreter interp = new DMTPInterpreter(this);
-    protected boolean quit = false;
+    protected IProtocolInterpreter interp = new DMTPInterpreter(this);
 
     public DMTPWorker(Socket clientSocket) {
-        this.clientSocket = clientSocket;
+        super(clientSocket);
     }
 
+
     @Override
-    public void run() {
-        establishCommunication();
+    protected void execution() throws ExecutionStopException {
+        String input = comm.readLine();
 
-        comm.writeLine("ok DMTP");
-
-        while (!quit) {
-            String input = comm.readLine();
-
-            if (input == null) {
-                if (this.clientSocket.isClosed()) {
-                    break;
-                }
-                continue;
+        if (input == null) {
+            if (this.clientSocket.isClosed()) {
+                throw new ExecutionStopException("Client connection closed.");
             }
-
-            try {
-                comm.writeLine(interp.interpretRequest(input));
-            } catch (ProtocolParseException e) {
-                comm.writeLine(e.getMessage());
-            }
+            return;
         }
 
         try {
-            clientSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            comm.writeLine(interp.interpretRequest(input));
+        } catch (ProtocolParseException e) {
+            comm.writeLine(e.getMessage());
         }
-
     }
 
     @Override
     public void onQuit() {
-        this.quit = true;
+        this.quit();
     }
 
-    private void establishCommunication() {
-        try {
-            this.comm = new SockCom(clientSocket);
-        } catch (IOException e) {
-            throw new RuntimeException("Error initiating communication to client", e);
-        }
+    @Override
+    protected void init() {
+        comm.writeLine("ok DMTP");
     }
-
 }

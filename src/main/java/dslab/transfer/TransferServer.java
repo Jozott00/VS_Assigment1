@@ -16,6 +16,7 @@ import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
 import dslab.util.Config;
 import dslab.util.worker.TransferDMTPWorker;
+import dslab.util.worker.WorkerFactory;
 
 public class TransferServer implements ITransferServer, Runnable {
 
@@ -24,7 +25,7 @@ public class TransferServer implements ITransferServer, Runnable {
     private Shell shell;
 
     private final ExecutorService connectionPool = Executors.newCachedThreadPool(); //TODO determine what threadpool is the best
-    public  final Executor forwardPool = Executors.newFixedThreadPool(3);
+    private static final Executor forwardPool = Executors.newFixedThreadPool(3);
 
     private Boolean shutdown = false;
 
@@ -63,7 +64,7 @@ public class TransferServer implements ITransferServer, Runnable {
                 }
 
                 connectionPool.execute(
-                    new TransferDMTPWorker(newConn, forwardPool)
+                    WorkerFactory.createTransferWorker(newConn)
                 );
             }
         });
@@ -138,6 +139,10 @@ public class TransferServer implements ITransferServer, Runnable {
     public static void main(String[] args) throws Exception {
         ITransferServer server = ComponentFactory.createTransferServer(args[0], System.in, System.out);
         server.run();
+    }
+
+    public static Executor getForwardPool() {
+        return forwardPool;
     }
 
 }

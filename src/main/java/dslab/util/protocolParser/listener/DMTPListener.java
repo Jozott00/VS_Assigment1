@@ -5,27 +5,27 @@ import dslab.model.Email;
 
 import java.util.List;
 
-public abstract class DMTPListener implements IProtocolListener {
+public interface DMTPListener extends IProtocolListener {
 
-    public void onBegin() {
-
-    }
-
-    public void onSubject(String subject) {
+    default void onBegin() {
 
     }
 
-    public void onData(String data) {
+    default void onSubject(String subject) {
 
     }
 
-    public void onFrom(String from) throws ValidationException {
+    default void onData(String data) {
 
     }
 
-    public void onTo(List<String> to) throws ValidationException {
+    default void onFrom(String from) throws ValidationException {
 
     }
 
-    public abstract void onSend(Email email) throws ValidationException;
+    default void onTo(List<String> to) throws ValidationException {
+
+    }
+
+    void onSend(Email email) throws ValidationException;
 }

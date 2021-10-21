@@ -1,4 +1,4 @@
-package dslab.mailbox.worker;
+package dslab.util.worker;
 
 public enum ProtocolType {
     DMTP,
