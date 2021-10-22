@@ -1,9 +1,6 @@
 package dslab.util.sockcom;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -14,25 +11,25 @@ public class SockCom implements ISockComm {
 
     Socket socket;
     BufferedReader in;
-    PrintWriter out;
+    PrintStream out;
 
     public SockCom(Socket socket) throws IOException {
         this.socket = socket;
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        this.out = new PrintWriter(socket.getOutputStream(), true);
+        this.out = new PrintStream(socket.getOutputStream(), true);
     }
 
     @Override
-    public String readLine() {
-        try {
-            return in.readLine();
-        } catch (IOException e) {
-            throw new RuntimeException("Could not read from stream", e);
-        }
+    public String readLine() throws IOException {
+        return in.readLine();
     }
 
     @Override
     public void writeLine(Object data) {
         out.println(data);
+    }
+
+    public PrintStream out() {
+        return out;
     }
 }

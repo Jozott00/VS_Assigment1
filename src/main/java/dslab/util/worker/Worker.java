@@ -1,24 +1,30 @@
 package dslab.util.worker;
 
+import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.exception.ExecutionStopException;
-import dslab.util.sockcom.SockCom;
+import dslab.util.protocolParser.listener.IProtocolListener;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-public abstract class Worker implements Runnable {
+public abstract class Worker implements Runnable, IProtocolListener {
 
-    protected final Socket clientSocket;
-    protected SockCom comm;
+    static public List<Worker> activeWorkers = Collections.synchronizedList(new ArrayList<>());
+
+    private final Closeable clientSocket;
+
     private boolean quit = false;
 
-    protected Worker(Socket clientSocket) {
+    protected Worker(Closeable clientSocket) {
         this.clientSocket = clientSocket;
     }
 
     @Override
     public void run() {
-        establishCommunication();
+        activeWorkers.add(this);
         init();
 
         while (!quit) {
@@ -29,11 +35,16 @@ public abstract class Worker implements Runnable {
             }
         }
 
+        activeWorkers.remove(this);
         closeConnection();
     }
 
-    protected void quit() {
+    @Override
+    @Command
+    public String quit() {
         quit = true;
+        closeConnection();
+        return "ok bye";
     }
 
     protected abstract void init();
@@ -45,14 +56,6 @@ public abstract class Worker implements Runnable {
             clientSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private void establishCommunication() {
-        try {
-            this.comm = new SockCom(clientSocket);
-        } catch (IOException e) {
-            throw new RuntimeException("Error initiating communication to client", e);
         }
     }
 

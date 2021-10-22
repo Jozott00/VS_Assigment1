@@ -1,13 +1,17 @@
 package dslab.util.worker;
 
+import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.exception.ValidationException;
+import dslab.mailbox.MailboxServer;
 import dslab.mailbox.repository.IMailboxRepository;
 import dslab.mailbox.repository.MailboxRepository;
 import dslab.model.Email;
 
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MailboxDMTPWorker extends DMTPWorker{
 
@@ -18,12 +22,17 @@ public class MailboxDMTPWorker extends DMTPWorker{
     }
 
     @Override
-    public void onTo(List<String> to) throws ValidationException {
-        List<String> usernames = to.stream()
-            .map(r -> r.split("@")[0])
-            .collect(Collectors.toList());
+    @Command
+    public String to(String to) throws ValidationException {
+        String domain = MailboxServer.config.getString("domain");
 
-        //TODO: What if it has wrong domain?
+        List<String> emails = Stream.of(to.split(","))
+            .filter(e -> !Email.invalidAddress(e))
+            .filter(s -> s.split("@")[1].equals(domain))
+            .collect(Collectors.toList());
+        List<String> usernames = emails.stream()
+            .map(r -> r.trim().split("@")[0])
+            .collect(Collectors.toList());
 
         List<String> storedUsers = repo.getAllUsers();
 
@@ -33,11 +42,19 @@ public class MailboxDMTPWorker extends DMTPWorker{
             ).collect(Collectors.toList());
 
         if(!notStoredUsers.isEmpty())
-            throw new ValidationException("unkonwn recipient " + String.join(",", notStoredUsers));
+            throw new ValidationException("unknown recipient " + String.join(",", notStoredUsers));
+
+        getEmail().setRecipients(emails);
+
+        return "ok " + emails.size();
     }
 
     @Override
-    public void onSend(Email email) {
-        repo.addEmailToUsers(email);
+    @Command
+    public String send() {
+        getEmail().valid();
+        repo.addEmailToUsers(getEmail());
+
+        return "ok";
     }
 }

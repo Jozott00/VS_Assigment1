@@ -54,14 +54,15 @@ public class TransferSenderPreparation {
 
                 if(domainLookUpFailure == null ) {
                     try {
-                        domainLookUpFailure = createEmailDeliveryFailure(email.getFrom(), "error domain unknown for " + r);
+                        domainLookUpFailure = createEmailDeliveryFailure(email.getFrom(), "error domain unknown for ");
+                        domainLookUpFailure.setFailureMail(true);
                     } catch (DomainLookUpException ex) {
                         ignoreFailures = true;
                         continue;
                     }
                 }
 
-                domainLookUpFailure.setData(domainLookUpFailure.getData() + "," + r);
+                domainLookUpFailure.setData(domainLookUpFailure.getData() + r +  ",");
             }
         }
 

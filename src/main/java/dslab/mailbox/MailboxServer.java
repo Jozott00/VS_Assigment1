@@ -1,5 +1,14 @@
 package dslab.mailbox;
 
+import at.ac.tuwien.dsg.orvell.Shell;
+import at.ac.tuwien.dsg.orvell.StopShellException;
+import at.ac.tuwien.dsg.orvell.annotation.Command;
+import dslab.ComponentFactory;
+import dslab.util.Config;
+import dslab.util.worker.ProtocolType;
+import dslab.util.worker.Worker;
+import dslab.util.worker.WorkerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -8,14 +17,6 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
-
-import at.ac.tuwien.dsg.orvell.Shell;
-import at.ac.tuwien.dsg.orvell.StopShellException;
-import at.ac.tuwien.dsg.orvell.annotation.Command;
-import dslab.ComponentFactory;
-import dslab.util.worker.ProtocolType;
-import dslab.util.Config;
-import dslab.util.worker.WorkerFactory;
 
 public class MailboxServer implements IMailboxServer, Runnable {
 
@@ -78,6 +79,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
         shutdown = true;
         dmapConnectionPool.shutdown();
         dmtpConnectionPool.shutdown();
+        Worker.activeWorkers.forEach(Worker::quit);
         throw new StopShellException();
     }
 

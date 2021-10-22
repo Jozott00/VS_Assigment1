@@ -1,12 +1,29 @@
 package dslab.monitoring;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 
+import at.ac.tuwien.dsg.orvell.Shell;
+import at.ac.tuwien.dsg.orvell.StopShellException;
+import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
 import dslab.util.Config;
 
+import javax.xml.crypto.Data;
+
 public class MonitoringServer implements IMonitoringServer {
+
+    private final Config config;
+    private DatagramSocket datagramSocket;
+    private final Shell shell;
+
+    private final Integer MAX_BUFFER_LENGTH = 1024;
+    private boolean shutdown = false;
+    private final MonitoringRepository repo = MonitoringRepository.getRepo();
+    private PackageListener listener;
 
     /**
      * Creates a new server instance.
@@ -17,27 +34,53 @@ public class MonitoringServer implements IMonitoringServer {
      * @param out the output stream to write console output to
      */
     public MonitoringServer(String componentId, Config config, InputStream in, PrintStream out) {
-        // TODO
+        this.config = config;
+
+        shell = new Shell(in, out);
+        shell.register(this);
+        shell.setPrompt(componentId + "> ");
     }
 
     @Override
     public void run() {
-        // TODO
+        openServer();
+        System.out.println("Listening on port: " + this.datagramSocket.getLocalPort());
+
+        listener = new PackageListener(datagramSocket);
+        listener.start();
+
+        shell.run();
+
+        if(!datagramSocket.isClosed()) shutdown();
     }
 
     @Override
-    public void addresses() {
-        // TODO
+    @Command
+    public String addresses() {
+        return repo.getFormattedAddresses();
     }
 
     @Override
-    public void servers() {
-        // TODO
+    @Command
+    public String servers() {
+        return repo.getFormattedServers();
     }
 
     @Override
-    public void shutdown() {
-        // TODO
+    @Command
+    public String shutdown() {
+        if(listener != null) listener.shutdown();
+        datagramSocket.close();
+        throw new StopShellException();
+    }
+
+    private void openServer() {
+        try {
+            // constructs a datagram socket and binds it to the specified port
+            datagramSocket = new DatagramSocket(config.getInt("udp.port"));
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot listen on UDP port.", e);
+        }
     }
 
     public static void main(String[] args) throws Exception {

@@ -1,15 +1,13 @@
 package dslab.util.worker;
 
-import dslab.model.Email;
+import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.model.ServerSpecificEmail;
 import dslab.model.TransferSenderPreparation;
 import dslab.transfer.TransferSenderTask;
-import dslab.util.protocolParser.listener.DMTPListener;
 
 import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 public class TransferDMTPWorker extends DMTPWorker {
 
@@ -21,9 +19,12 @@ public class TransferDMTPWorker extends DMTPWorker {
     }
 
     @Override
-    public void onSend(Email email) {
+    @Command
+    public String send() {
+        getEmail().valid();
+
         // send to mailbox server
-        TransferSenderPreparation config = new TransferSenderPreparation(email);
+        TransferSenderPreparation config = new TransferSenderPreparation(getEmail());
 
         // send valid emails
         List<ServerSpecificEmail> toSend = config.getToSend();
@@ -31,9 +32,12 @@ public class TransferDMTPWorker extends DMTPWorker {
 
         // send error of domain lookup failures
         ServerSpecificEmail lookUpFailures = config.getDomainLookUpFailure();
-//        lookUpFailures.setFailureMail(true);
+
         if(lookUpFailures != null) {
             executor.execute(new TransferSenderTask(lookUpFailures));
         }
+
+        return "ok";
     }
+
 }

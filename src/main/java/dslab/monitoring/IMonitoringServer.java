@@ -18,16 +18,16 @@ public interface IMonitoringServer extends Runnable {
      * CLI command to shut down the server. After this method, all resources should be closed, and the application
      * should terminate.
      */
-    void shutdown();
+    String shutdown();
 
     /**
      * CLI command to report usage statistics for transfer servers.
      */
-    void servers();
+    String servers();
 
     /**
      * CLI command to report usage statistics for individual senders.
      */
-    void addresses();
+    String addresses();
 
 }

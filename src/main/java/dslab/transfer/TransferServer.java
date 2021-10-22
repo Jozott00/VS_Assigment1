@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,14 +16,14 @@ import at.ac.tuwien.dsg.orvell.StopShellException;
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
 import dslab.util.Config;
-import dslab.util.worker.TransferDMTPWorker;
+import dslab.util.worker.Worker;
 import dslab.util.worker.WorkerFactory;
 
 public class TransferServer implements ITransferServer, Runnable {
 
-    private Config config;
-    private ServerSocket serverSocket;
-    private Shell shell;
+    static protected Config config;
+    static protected ServerSocket serverSocket;
+    private final Shell shell;
 
     private final ExecutorService connectionPool = Executors.newCachedThreadPool(); //TODO determine what threadpool is the best
     private static final Executor forwardPool = Executors.newFixedThreadPool(3);
@@ -38,7 +39,7 @@ public class TransferServer implements ITransferServer, Runnable {
      * @param out the output stream to write console output to
      */
     public TransferServer(String componentId, Config config, InputStream in, PrintStream out) {
-        this.config = config;
+        TransferServer.config = config;
 
         shell = new Shell(in, out);
         shell.register(this);
@@ -49,13 +50,14 @@ public class TransferServer implements ITransferServer, Runnable {
     public void run() {
 
         openServer();
-        System.out.println("Listening on port: " + this.serverSocket.getLocalPort());
+
+        System.out.println("Listening on port: " + serverSocket.getLocalPort());
 
         Thread loopThread = new Thread(() -> {
             while (!shutdown) {
                 Socket newConn;
                 try {
-                    newConn = this.serverSocket.accept();
+                    newConn = serverSocket.accept();
                 } catch (IOException e) {
                     if(shutdown) {
                         continue;
@@ -86,7 +88,10 @@ public class TransferServer implements ITransferServer, Runnable {
     public void shutdown() {
         closeServer();
         shutdown = true;
-        connectionPool.shutdown();
+        connectionPool.shutdownNow();
+        Worker.activeWorkers.forEach(Worker::quit);
+        TransferSenderTask.activeTasks.forEach(TransferSenderTask::closeConnection);
+
         throw new StopShellException();
     }
 
@@ -101,7 +106,7 @@ public class TransferServer implements ITransferServer, Runnable {
 
     public void closeServer() {
         try {
-            this.serverSocket.close();
+            serverSocket.close();
         } catch (IOException e) {
             throw new RuntimeException("Failed to close server", e);
         }

@@ -70,7 +70,7 @@ public class Email {
             if(invalidAddress(r)) throw new ValidationException("includes invalid recipients address");
     }
 
-    public boolean invalidAddress(String email) {
+    public static boolean invalidAddress(String email) {
         return !email.matches("^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$");
     }
 

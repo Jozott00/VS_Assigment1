@@ -7,25 +7,15 @@ import java.util.List;
 
 public interface DMTPListener extends IProtocolListener {
 
-    default void onBegin() {
+    String begin();
 
-    }
+    String subject(List<String> data);
 
-    default void onSubject(String subject) {
+    String data(List<String> data);
 
-    }
+    String from(String from) throws ValidationException;
 
-    default void onData(String data) {
+    String to(String to) throws ValidationException;
 
-    }
-
-    default void onFrom(String from) throws ValidationException {
-
-    }
-
-    default void onTo(List<String> to) throws ValidationException {
-
-    }
-
-    void onSend(Email email) throws ValidationException;
+    String send() throws ValidationException;
 }
