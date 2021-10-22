@@ -15,7 +15,6 @@ public abstract class Worker implements Runnable, IProtocolListener {
     static public List<Worker> activeWorkers = Collections.synchronizedList(new ArrayList<>());
 
     private final Closeable clientSocket;
-
     private boolean quit = false;
 
     protected Worker(Closeable clientSocket) {
