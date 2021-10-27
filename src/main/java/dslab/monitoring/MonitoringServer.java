@@ -20,9 +20,7 @@ public class MonitoringServer implements IMonitoringServer {
     private DatagramSocket datagramSocket;
     private final Shell shell;
 
-    private final Integer MAX_BUFFER_LENGTH = 1024;
-    private boolean shutdown = false;
-    private final MonitoringRepository repo = MonitoringRepository.getRepo();
+    private final MonitoringRepository repo;
     private PackageListener listener;
 
     /**
@@ -33,8 +31,9 @@ public class MonitoringServer implements IMonitoringServer {
      * @param in the input stream to read console input from
      * @param out the output stream to write console output to
      */
-    public MonitoringServer(String componentId, Config config, InputStream in, PrintStream out) {
+    public MonitoringServer(String componentId, Config config, InputStream in, PrintStream out, MonitoringRepository repo) {
         this.config = config;
+        this.repo = repo;
 
         shell = new Shell(in, out);
         shell.register(this);
@@ -46,7 +45,7 @@ public class MonitoringServer implements IMonitoringServer {
         openServer();
         System.out.println("Listening on port: " + this.datagramSocket.getLocalPort());
 
-        listener = new PackageListener(datagramSocket);
+        listener = new PackageListener(datagramSocket, repo);
         listener.start();
 
         shell.run();

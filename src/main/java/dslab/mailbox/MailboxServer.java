@@ -4,9 +4,10 @@ import at.ac.tuwien.dsg.orvell.Shell;
 import at.ac.tuwien.dsg.orvell.StopShellException;
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
+import dslab.mailbox.repository.MailboxServerRepository;
 import dslab.util.Config;
 import dslab.util.worker.ProtocolType;
-import dslab.util.worker.Worker;
+import dslab.util.worker.abstracts.Worker;
 import dslab.util.worker.WorkerFactory;
 
 import java.io.IOException;
@@ -29,7 +30,10 @@ public class MailboxServer implements IMailboxServer, Runnable {
 
     private Boolean shutdown = false;
 
-    public static Config config;
+    private Config config;
+
+    private final MailboxServerRepository repo;
+    private final WorkerFactory factory;
 
     /**
      * Creates a new server instance.
@@ -39,8 +43,10 @@ public class MailboxServer implements IMailboxServer, Runnable {
      * @param in the input stream to read console input from
      * @param out the output stream to write console output to
      */
-    public MailboxServer(String componentId, Config config, InputStream in, PrintStream out) {
-        MailboxServer.config = config;
+    public MailboxServer(String componentId, Config config, InputStream in, PrintStream out, MailboxServerRepository repo) {
+        this.config = config;
+        this.repo = repo;
+        this.factory = new WorkerFactory(repo);
 
         shell = new Shell(in, out);
         shell.register(this);
@@ -79,7 +85,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
         shutdown = true;
         dmapConnectionPool.shutdown();
         dmtpConnectionPool.shutdown();
-        Worker.activeWorkers.forEach(Worker::quit);
+        repo.getActiveWorkers().forEach(Worker::quit);
         throw new StopShellException();
     }
 
@@ -153,7 +159,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
                     throw new RuntimeException("Error accepting client connection", e);
                 }
 
-                Runnable worker = WorkerFactory.createMailboxWorker(newConn, type);
+                Runnable worker = factory.createMailboxWorker(newConn, type, repo);
 
                 if(type == ProtocolType.DMAP)
                     dmapConnectionPool.execute(worker);

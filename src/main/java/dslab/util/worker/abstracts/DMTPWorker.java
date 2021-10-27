@@ -1,16 +1,11 @@
-package dslab.util.worker;
+package dslab.util.worker.abstracts;
 
-import at.ac.tuwien.dsg.orvell.Context;
 import at.ac.tuwien.dsg.orvell.annotation.Command;
-import dslab.exception.ExecutionStopException;
 import dslab.exception.ValidationException;
 import dslab.model.Email;
 import dslab.util.protocolParser.ProtocolParseException;
-import dslab.util.protocolParser.ProtocolParser;
 import dslab.util.protocolParser.listener.DMTPListener;
-import dslab.util.sockcom.SockCom;
 
-import java.io.IOException;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.List;

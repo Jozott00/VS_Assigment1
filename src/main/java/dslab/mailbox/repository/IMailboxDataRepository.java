@@ -6,7 +6,7 @@ import dslab.model.StoredEmail;
 import java.util.HashMap;
 import java.util.List;
 
-public interface IMailboxRepository {
+public interface IMailboxDataRepository {
 
 
     void addEmailToUsers(Email email);

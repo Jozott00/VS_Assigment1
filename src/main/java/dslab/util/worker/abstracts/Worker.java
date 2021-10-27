@@ -1,18 +1,16 @@
-package dslab.util.worker;
+package dslab.util.worker.abstracts;
 
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.exception.ExecutionStopException;
 import dslab.util.protocolParser.listener.IProtocolListener;
+import dslab.util.worker.repository.WorkerRepository;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public abstract class Worker implements Runnable, IProtocolListener {
 
-    static public List<Worker> activeWorkers = Collections.synchronizedList(new ArrayList<>());
+    protected WorkerRepository repo;
 
     private final Closeable clientSocket;
     private boolean quit = false;
@@ -23,7 +21,7 @@ public abstract class Worker implements Runnable, IProtocolListener {
 
     @Override
     public void run() {
-        activeWorkers.add(this);
+        addWorker();
         init();
 
         while (!quit) {
@@ -34,8 +32,12 @@ public abstract class Worker implements Runnable, IProtocolListener {
             }
         }
 
-        activeWorkers.remove(this);
+        removeWorker();
         closeConnection();
+    }
+
+    public void setup(WorkerRepository repo) {
+        this.repo = repo;
     }
 
     @Override
@@ -44,6 +46,12 @@ public abstract class Worker implements Runnable, IProtocolListener {
         quit = true;
         closeConnection();
         return "ok bye";
+    }
+
+    @Override
+    public void errorQuit() {
+        quit = true;
+        closeConnection();
     }
 
     protected abstract void init();
@@ -56,6 +64,16 @@ public abstract class Worker implements Runnable, IProtocolListener {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void addWorker() {
+        if(repo == null) throw new RuntimeException("No Worker Repository available");
+        repo.getActiveWorkers().add(this);
+    }
+
+    private void removeWorker() {
+        if(repo == null) throw new RuntimeException("No Worker Repository available");
+        repo.getActiveWorkers().remove(this);
     }
 
 }

@@ -43,7 +43,7 @@ public class ProtocolParser implements IProtocolParser {
             input = parser.parse(req);
         } catch (Exception e) {
             printErr("protocol or server error");
-            registerObj.quit();
+            registerObj.errorQuit();
             return;
         }
 
@@ -51,7 +51,7 @@ public class ProtocolParser implements IProtocolParser {
 
         if(command == null) {
             printErr("protocol error");
-            registerObj.quit();
+            registerObj.errorQuit();
             return;
         }
 
@@ -61,7 +61,7 @@ public class ProtocolParser implements IProtocolParser {
             printErr(ex.getMessage());
         } catch (CommandUsageException | ProtocolParseException e) {
             printErr("protocol error");
-            registerObj.quit();
+            registerObj.errorQuit();
         }
     }
 

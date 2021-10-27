@@ -5,10 +5,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import at.ac.tuwien.dsg.orvell.Shell;
@@ -16,19 +12,17 @@ import at.ac.tuwien.dsg.orvell.StopShellException;
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.ComponentFactory;
 import dslab.util.Config;
-import dslab.util.worker.Worker;
+import dslab.util.worker.abstracts.Worker;
 import dslab.util.worker.WorkerFactory;
 
 public class TransferServer implements ITransferServer, Runnable {
 
-    static protected Config config;
-    static protected ServerSocket serverSocket;
+    private final Config config;
     private final Shell shell;
 
-    private final ExecutorService connectionPool = Executors.newCachedThreadPool(); //TODO determine what threadpool is the best
-    private static final Executor forwardPool = Executors.newFixedThreadPool(3);
-
     private Boolean shutdown = false;
+    private TransferRepository repo;
+    private WorkerFactory factory;
 
     /**
      * Creates a new server instance.
@@ -38,8 +32,10 @@ public class TransferServer implements ITransferServer, Runnable {
      * @param in the input stream to read console input from
      * @param out the output stream to write console output to
      */
-    public TransferServer(String componentId, Config config, InputStream in, PrintStream out) {
-        TransferServer.config = config;
+    public TransferServer(String componentId, Config config, InputStream in, PrintStream out, TransferRepository repo) {
+        this.config = config;
+        this.repo = repo;
+        this.factory = new WorkerFactory(repo);
 
         shell = new Shell(in, out);
         shell.register(this);
@@ -51,13 +47,13 @@ public class TransferServer implements ITransferServer, Runnable {
 
         openServer();
 
-        System.out.println("Listening on port: " + serverSocket.getLocalPort());
+        System.out.println("Listening on port: " + repo.getServerSocket().getLocalPort());
 
         Thread loopThread = new Thread(() -> {
             while (!shutdown) {
                 Socket newConn;
                 try {
-                    newConn = serverSocket.accept();
+                    newConn = repo.getServerSocket().accept();
                 } catch (IOException e) {
                     if(shutdown) {
                         continue;
@@ -65,8 +61,8 @@ public class TransferServer implements ITransferServer, Runnable {
                     throw new RuntimeException("Error accepting client connection", e);
                 }
 
-                connectionPool.execute(
-                    WorkerFactory.createTransferWorker(newConn)
+                repo.getConnectionPool().execute(
+                    factory.createTransferWorker(newConn, repo)
                 );
             }
         });
@@ -88,9 +84,9 @@ public class TransferServer implements ITransferServer, Runnable {
     public void shutdown() {
         closeServer();
         shutdown = true;
-        connectionPool.shutdownNow();
-        Worker.activeWorkers.forEach(Worker::quit);
-        TransferSenderTask.activeTasks.forEach(TransferSenderTask::closeConnection);
+        repo.getConnectionPool().shutdownNow();
+        repo.getActiveWorkers().forEach(Worker::quit);
+        repo.getActiveSenderTasks().forEach(TransferSenderTask::closeConnection);
 
         throw new StopShellException();
     }
@@ -98,7 +94,8 @@ public class TransferServer implements ITransferServer, Runnable {
     public void openServer() {
         int port = config.getInt("tcp.port");
         try {
-            serverSocket = new ServerSocket(port);
+            ServerSocket serverSocket = new ServerSocket(port);
+            repo.setServerSocket(serverSocket);
         } catch (IOException e) {
             throw new RuntimeException("Could not open port " + port, e);
         }
@@ -106,7 +103,7 @@ public class TransferServer implements ITransferServer, Runnable {
 
     public void closeServer() {
         try {
-            serverSocket.close();
+            repo.getServerSocket().close();
         } catch (IOException e) {
             throw new RuntimeException("Failed to close server", e);
         }
@@ -114,7 +111,7 @@ public class TransferServer implements ITransferServer, Runnable {
 
     @Command
     public void connStatus() {
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) connectionPool;
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) repo.getConnectionPool();
         System.out.println("------\n" +
             "Threadpool for request execution \n" +
             "Threads: " + executor.getActiveCount() + " \n" +
@@ -125,7 +122,7 @@ public class TransferServer implements ITransferServer, Runnable {
 
     @Command
     public void forwardStatus() {
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) forwardPool;
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) repo.getForwardPool();
         System.out.println("------\n" +
             "Threadpool for email forwarding\n" +
             "MaxThreads: " + executor.getMaximumPoolSize() + " \n" +
@@ -137,7 +134,7 @@ public class TransferServer implements ITransferServer, Runnable {
 
     @Command
     public void setMaxForwardThreads(int count) {
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) forwardPool;
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) repo.getForwardPool();
         executor.setMaximumPoolSize(count);
     }
 
@@ -146,8 +143,5 @@ public class TransferServer implements ITransferServer, Runnable {
         server.run();
     }
 
-    public static Executor getForwardPool() {
-        return forwardPool;
-    }
 
 }

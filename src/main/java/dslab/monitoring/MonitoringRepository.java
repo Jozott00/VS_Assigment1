@@ -11,13 +11,7 @@ public class MonitoringRepository {
     private final ConcurrentMap<String, AtomicLong> addresses = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, AtomicLong> servers = new ConcurrentHashMap<>();
 
-    private MonitoringRepository() {}
-
-    private static MonitoringRepository repo;
-    static synchronized public MonitoringRepository getRepo() {
-        if(repo == null) repo = new MonitoringRepository();
-        return repo;
-    }
+    public MonitoringRepository() {}
 
     public void insertAddress(String address) {
         addresses.putIfAbsent(address, new AtomicLong(0));

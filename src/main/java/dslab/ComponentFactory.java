@@ -6,8 +6,11 @@ import java.io.PrintStream;
 import dslab.mailbox.IMailboxServer;
 import dslab.mailbox.MailboxServer;
 import dslab.monitoring.IMonitoringServer;
+import dslab.mailbox.repository.MailboxServerRepository;
+import dslab.monitoring.MonitoringRepository;
 import dslab.monitoring.MonitoringServer;
 import dslab.transfer.ITransferServer;
+import dslab.transfer.TransferRepository;
 import dslab.transfer.TransferServer;
 import dslab.util.Config;
 
@@ -38,7 +41,8 @@ public final class ComponentFactory {
          */
 
         Config config = new Config(componentId);
-        return new MonitoringServer(componentId, config, in, out);
+        MonitoringRepository repo = new MonitoringRepository();
+        return new MonitoringServer(componentId, config, in, out, repo);
     }
 
     /**
@@ -56,7 +60,8 @@ public final class ComponentFactory {
          */
 
         Config config = new Config(componentId);
-        return new MailboxServer(componentId, config, in, out);
+        MailboxServerRepository repo = new MailboxServerRepository(config);
+        return new MailboxServer(componentId, config, in, out, repo);
     }
 
     /**
@@ -74,7 +79,8 @@ public final class ComponentFactory {
          */
 
         Config config = new Config(componentId);
-        return new TransferServer(componentId, config, in, out);
+        TransferRepository repo = new TransferRepository(config);
+        return new TransferServer(componentId, config, in, out, repo);
     }
 
 }

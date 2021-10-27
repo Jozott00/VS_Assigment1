@@ -1,7 +1,6 @@
 package dslab.mailbox.repository;
 
 import dslab.exception.ValidationException;
-import dslab.mailbox.MailboxServer;
 import dslab.model.Email;
 import dslab.model.StoredEmail;
 import dslab.util.Config;
@@ -9,28 +8,18 @@ import dslab.util.Config;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class MailboxRepository implements IMailboxRepository {
+public class MailboxDataRepository implements IMailboxDataRepository {
 
     HashMap<String, ConcurrentHashMap<Long, StoredEmail>> userEmails;
 
-    private static MailboxRepository repo;
-
-    private MailboxRepository(Config config) {
+    public MailboxDataRepository(Config config) {
         this.userEmails = new HashMap<>();
         config.listKeys().forEach(
             k -> userEmails.put(k, new ConcurrentHashMap<>())
         );
-    }
-
-    public synchronized static MailboxRepository getRepo() {
-        if(repo == null) {
-            repo = new MailboxRepository(new Config(MailboxServer.config.getString("users.config")));
-        }
-        return repo;
     }
 
     @Override

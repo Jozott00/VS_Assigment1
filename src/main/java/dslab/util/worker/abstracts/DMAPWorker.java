@@ -1,31 +1,29 @@
-package dslab.util.worker;
+package dslab.util.worker.abstracts;
 
 import at.ac.tuwien.dsg.orvell.annotation.Command;
-import dslab.exception.ExecutionStopException;
 import dslab.exception.ValidationException;
-import dslab.mailbox.MailboxServer;
-import dslab.mailbox.repository.IMailboxRepository;
-import dslab.mailbox.repository.MailboxRepository;
+import dslab.mailbox.repository.IMailboxDataRepository;
 import dslab.model.StoredEmail;
+import dslab.mailbox.repository.MailboxServerRepository;
 import dslab.util.Config;
-import dslab.util.protocolParser.ProtocolParser;
 import dslab.util.protocolParser.listener.DMAPListener;
-import dslab.util.sockcom.SockCom;
 
-import java.io.IOException;
 import java.net.Socket;
 import java.util.MissingResourceException;
 import java.util.stream.Collectors;
 
 public abstract class DMAPWorker extends TCPWorker implements DMAPListener {
 
-    IMailboxRepository repo = MailboxRepository.getRepo();
+    private final IMailboxDataRepository repo;
 
     private String loggedInUser;
-    private final Config config = new Config(MailboxServer.config.getString("users.config"));
+    private final Config config;
 
-    protected DMAPWorker(Socket clientSocket) {
+    protected DMAPWorker(Socket clientSocket, MailboxServerRepository repo) {
         super(clientSocket, "ok DMAP");
+        this.setup(repo);
+        this.repo = repo.getDataRepo();
+        this.config = new Config(repo.getConfig().getString("users.config"));
     }
 
     @Override

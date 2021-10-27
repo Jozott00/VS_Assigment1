@@ -2,29 +2,32 @@ package dslab.util.worker;
 
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.exception.ValidationException;
-import dslab.mailbox.MailboxServer;
-import dslab.mailbox.repository.IMailboxRepository;
-import dslab.mailbox.repository.MailboxRepository;
+import dslab.mailbox.repository.IMailboxDataRepository;
 import dslab.model.Email;
+import dslab.mailbox.repository.MailboxServerRepository;
+import dslab.util.Config;
+import dslab.util.worker.abstracts.DMTPWorker;
 
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class MailboxDMTPWorker extends DMTPWorker{
+public class MailboxDMTPWorker extends DMTPWorker {
 
-    IMailboxRepository repo = MailboxRepository.getRepo();
+    private final IMailboxDataRepository repo;
+    private final Config config;
 
-    public MailboxDMTPWorker(Socket clientSocket) {
+    public MailboxDMTPWorker(Socket clientSocket, MailboxServerRepository repo) {
         super(clientSocket);
+        this.repo = repo.getDataRepo();
+        this.config = repo.getConfig();
     }
 
     @Override
     @Command
     public String to(String to) throws ValidationException {
-        String domain = MailboxServer.config.getString("domain");
+        String domain = config.getString("domain");
 
         List<String> emails = Stream.of(to.split(","))
             .filter(e -> !Email.invalidAddress(e))

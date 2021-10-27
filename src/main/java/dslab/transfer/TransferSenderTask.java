@@ -17,19 +17,20 @@ import java.util.stream.Collectors;
 
 public class TransferSenderTask implements Runnable{
 
-    static protected List<TransferSenderTask> activeTasks = Collections.synchronizedList(new ArrayList<>());
+    private TransferRepository repo;
 
     private ServerSpecificEmail email;
     private Socket socket;
     private SockCom comm;
 
-    public TransferSenderTask(ServerSpecificEmail email) {
+    public TransferSenderTask(ServerSpecificEmail email, TransferRepository repo) {
         this.email = email;
+        this.repo = repo;
     }
 
     @Override
     public void run() {
-        activeTasks.add(this);
+        repo.getActiveSenderTasks().add(this);
         try {
             socket = connectToServer();
             comm = new SockCom(socket);
@@ -67,7 +68,7 @@ public class TransferSenderTask implements Runnable{
             e.printStackTrace();
         }
 
-        activeTasks.remove(this);
+        repo.getActiveSenderTasks().remove(this);
     }
 
     Socket connectToServer() {
@@ -130,7 +131,7 @@ public class TransferSenderTask implements Runnable{
     private void sendFailureMail(String error) {
         try {
             ServerSpecificEmail failureMail = TransferSenderPreparation.createEmailDeliveryFailure(email.getFrom(), error);
-            TransferServer.getForwardPool().execute(new TransferSenderTask(failureMail));
+            repo.getForwardPool().execute(new TransferSenderTask(failureMail, repo));
         } catch (DomainLookUpException ignored) {}
     }
 
@@ -138,11 +139,11 @@ public class TransferSenderTask implements Runnable{
         try {
             DatagramSocket socket = new DatagramSocket();
 
-            Config config = TransferServer.config;
+            Config config = repo.getConfig();
 
-            String data = TransferServer.serverSocket.getInetAddress().getHostAddress()
+            String data = repo.getServerSocket().getInetAddress().getHostAddress()
                 + ":"
-                + TransferServer.serverSocket.getLocalPort()
+                + repo.getServerSocket().getLocalPort()
                 + " "
                 + this.email.getFrom();
 

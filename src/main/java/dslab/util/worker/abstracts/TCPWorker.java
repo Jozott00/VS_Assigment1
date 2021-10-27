@@ -1,4 +1,4 @@
-package dslab.util.worker;
+package dslab.util.worker.abstracts;
 
 import at.ac.tuwien.dsg.orvell.annotation.Command;
 import dslab.exception.ExecutionStopException;

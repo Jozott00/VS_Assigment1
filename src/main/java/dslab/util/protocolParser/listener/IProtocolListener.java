@@ -4,4 +4,6 @@ public interface IProtocolListener {
 
     String quit();
 
+    void errorQuit();
+
 }

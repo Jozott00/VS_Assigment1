@@ -1,21 +1,37 @@
 package dslab.util.worker;
 
-import dslab.transfer.TransferServer;
+import dslab.mailbox.repository.MailboxServerRepository;
+import dslab.transfer.TransferRepository;
+import dslab.util.worker.abstracts.Worker;
+import dslab.util.worker.repository.WorkerRepository;
 
 import java.net.Socket;
 
 public class WorkerFactory {
 
-    public static Worker createMailboxWorker(Socket conn, ProtocolType type) {
-        if(type == ProtocolType.DMTP)
-            return new MailboxDMTPWorker(conn);
+    private final WorkerRepository workerRepo;
 
-        return new MailboxDMAPWorker(conn);
+    public WorkerFactory(WorkerRepository repo) {
+        this.workerRepo = repo;
     }
 
-    public static Worker createTransferWorker(Socket conn)
+    public Worker createMailboxWorker(Socket conn, ProtocolType type, MailboxServerRepository repo) {
+        Worker worker;
+
+        if(type == ProtocolType.DMTP)
+            worker = new MailboxDMTPWorker(conn, repo);
+        else
+            worker = new MailboxDMAPWorker(conn, repo);
+
+        worker.setup(workerRepo);
+        return worker;
+    }
+
+    public Worker createTransferWorker(Socket conn, TransferRepository repo)
     {
-        return new TransferDMTPWorker(conn, TransferServer.getForwardPool());
+        Worker worker = new TransferDMTPWorker(conn, repo);
+        worker.setup(workerRepo);
+        return worker;
     }
 
 }
