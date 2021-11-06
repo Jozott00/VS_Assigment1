@@ -70,7 +70,9 @@ public class TransferServer implements ITransferServer, Runnable {
 
         shell.run();
         if(!shutdown) {
-            shutdown();
+            try {
+                shutdown();
+            } catch (StopShellException ignored) {}
         }
 
         // interrupt thread to avoid deadlock
@@ -110,26 +112,32 @@ public class TransferServer implements ITransferServer, Runnable {
     }
 
     @Command
-    public void connStatus() {
+    public String connStatus() {
         ThreadPoolExecutor executor = (ThreadPoolExecutor) repo.getConnectionPool();
-        System.out.println("------\n" +
+        return "------\n" +
             "Threadpool for request execution \n" +
-            "Threads: " + executor.getActiveCount() + " \n" +
+            "ActiveThreads: " + executor.getActiveCount() + " \n" +
             "Queue: " + executor.getQueue().size() + " \n" +
             "PoolSize " + executor.getPoolSize() + " \n" +
-            "-----");
+            "-----";
     }
 
     @Command
-    public void forwardStatus() {
+    public String forwardStatus() {
         ThreadPoolExecutor executor = (ThreadPoolExecutor) repo.getForwardPool();
-        System.out.println("------\n" +
+        return "------\n" +
             "Threadpool for email forwarding\n" +
             "MaxThreads: " + executor.getMaximumPoolSize() + " \n" +
-            "Threads: " + executor.getActiveCount() + " \n" +
+            "ActiveThreads: " + executor.getActiveCount() + " \n" +
             "Queue: " + executor.getQueue().size() + " \n" +
             "PoolSize " + executor.getPoolSize() + " \n" +
-            "-----");
+            "-----";
+    }
+
+    @Command
+    public String forwardThreads() {
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) repo.getForwardPool();
+        return "ActiveThreads: " + executor.getActiveCount();
     }
 
     @Command

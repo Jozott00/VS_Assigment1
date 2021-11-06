@@ -25,8 +25,8 @@ public class MailboxServer implements IMailboxServer, Runnable {
     private ServerSocket dmapServerSocket;
     private Shell shell;
 
-    private final ExecutorService dmapConnectionPool = Executors.newCachedThreadPool(); //TODO determine what threadpool is the best
-    private final ExecutorService dmtpConnectionPool = Executors.newFixedThreadPool(3);
+    private final ExecutorService dmapConnectionPool = Executors.newCachedThreadPool();
+    private final ExecutorService dmtpConnectionPool = Executors.newFixedThreadPool(4);
 
     private Boolean shutdown = false;
 
@@ -68,7 +68,9 @@ public class MailboxServer implements IMailboxServer, Runnable {
 
         shell.run();
         if(!shutdown) {
-            shutdown();
+            try {
+                shutdown();
+            } catch (StopShellException ignored) {}
         }
 
         // interrupt thread to avoid deadlock
@@ -81,6 +83,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
     @Override
     @Command
     public void shutdown() {
+        System.out.println("Shutdown Server...");
         closeServer();
         shutdown = true;
         dmapConnectionPool.shutdown();

@@ -28,6 +28,7 @@ public abstract class Worker implements Runnable, IProtocolListener {
             try {
                 execution();
             } catch (ExecutionStopException e) {
+                System.out.println("Stop worker " + this);
                 break;
             }
         }

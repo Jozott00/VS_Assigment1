@@ -28,7 +28,7 @@ public class TransferDMTPWorker extends DMTPWorker {
         getEmail().valid();
 
         // send to mailbox server
-        TransferSenderPreparation config = new TransferSenderPreparation(getEmail());
+        TransferSenderPreparation config = new TransferSenderPreparation(getEmail(), repo.getServerSocket().getInetAddress().getHostAddress());
 
         // send valid emails
         List<ServerSpecificEmail> toSend = config.getToSend();

@@ -15,8 +15,8 @@ public class TransferSenderPreparation {
 
     private boolean ignoreFailures = false;
 
-    public TransferSenderPreparation(Email email) {
-        domainLookUp(email);
+    public TransferSenderPreparation(Email email, String ip) {
+        domainLookUp(email, ip);
     }
 
     public ServerSpecificEmail getDomainLookUpFailure() {
@@ -28,7 +28,7 @@ public class TransferSenderPreparation {
     }
 
 
-    private void domainLookUp(Email email) {
+    private void domainLookUp(Email email, String ip) {
 
         List<String> recipients = new ArrayList<>(email.getRecipients());
         email = new Email(email);
@@ -54,7 +54,7 @@ public class TransferSenderPreparation {
 
                 if(domainLookUpFailure == null ) {
                     try {
-                        domainLookUpFailure = createEmailDeliveryFailure(email.getFrom(), "error domain unknown for ");
+                        domainLookUpFailure = createEmailDeliveryFailure(email.getFrom(), "error domain unknown for ", ip);
                         domainLookUpFailure.setFailureMail(true);
                     } catch (DomainLookUpException ex) {
                         ignoreFailures = true;
@@ -71,7 +71,7 @@ public class TransferSenderPreparation {
         }
     }
 
-    public static ServerSpecificEmail createEmailDeliveryFailure(String receiver, String data) throws DomainLookUpException {
+    public static ServerSpecificEmail createEmailDeliveryFailure(String receiver, String data, String ip) throws DomainLookUpException {
         String failureDomain = getDomain(receiver);
         String[] ipPortFailure = getIpPort(failureDomain);
 
@@ -79,7 +79,7 @@ public class TransferSenderPreparation {
         failureEmail.setSubject("Mail Delivery Error");
         failureEmail.setData(data);
         try {
-            failureEmail.setFrom("server@transfer.com");
+            failureEmail.setFrom("mailer@" + ip);
             failureEmail.setRecipients(new ArrayList<String>(Collections.singleton(receiver)));
         } catch (ValidationException ignored) {}
         int port = Integer.parseInt(ipPortFailure[1]);

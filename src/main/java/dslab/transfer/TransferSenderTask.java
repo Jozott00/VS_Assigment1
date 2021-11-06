@@ -9,9 +9,7 @@ import dslab.util.sockcom.SockCom;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,29 +39,12 @@ public class TransferSenderTask implements Runnable{
             comm.writeLine("begin");
             comm.readLine();
 
-            int attemptCounter = 0;
-            do {
-                comm.writeLine("to " + String.join(",", email.getRecipients()));
-            } while (!checkToResponse() && !email.isFailureMail() && attemptCounter++ < 3 && email.getRecipients().size() > 0);
+            sendEmail();
 
-            comm.writeLine("data " + email.getData());
-            comm.readLine();
-            comm.writeLine("subject " + email.getSubject());
-            comm.readLine();
-            comm.writeLine("from " + email.getFrom());
-            comm.readLine();
-            comm.writeLine("send");
-            try {
-                checkOkResponse();
-                sendUdpData(); // on successfull sending
-            } catch (NoOkResponseException e) {
-                if(!email.isFailureMail())
-                    sendFailureMail("error sending mail to " + String.join(",", email.getFrom()));
-                e.printStackTrace();
-            }
             comm.writeLine("quit");
             closeConnection();
         } catch (SocketException ignored) {
+            System.out.println("Stop sending because of Socket is closed");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -71,12 +52,36 @@ public class TransferSenderTask implements Runnable{
         repo.getActiveSenderTasks().remove(this);
     }
 
+    private void sendEmail() throws IOException {
+        int attemptCounter = 0;
+        do {
+            comm.writeLine("to " + String.join(",", email.getRecipients()));
+        } while (!checkToResponse() && !email.isFailureMail() && attemptCounter++ < 2 && email.getRecipients().size() > 0);
+
+        if(email.getRecipients().size() == 0) return;
+
+        comm.writeLine("data " + email.getData());
+        comm.readLine();
+        comm.writeLine("subject " + email.getSubject());
+        comm.readLine();
+        comm.writeLine("from " + email.getFrom());
+        comm.readLine();
+        comm.writeLine("send");
+        try {
+            checkOkResponse();
+            sendUdpData(); // on successfull sending
+        } catch (NoOkResponseException e) {
+            if(!email.isFailureMail())
+                sendFailureMail("error sending mail " + String.join(",", email.getRecipients()));
+        }
+    }
+
     Socket connectToServer() {
         try {
             return new Socket(email.getMailboxIp(), email.getMailboxPort());
         } catch (IOException e) {
             sendFailureMail("could not connect to recipient server");
-            throw new RuntimeException("Could not connect to " + email.getMailboxIp() + ":" + email.getMailboxPort() , e);
+            throw new RuntimeException("Could not connect to " + email.getMailboxIp() + ":" + email.getMailboxPort() + ": " + e.getMessage() , e);
         }
     }
 
@@ -130,7 +135,7 @@ public class TransferSenderTask implements Runnable{
 
     private void sendFailureMail(String error) {
         try {
-            ServerSpecificEmail failureMail = TransferSenderPreparation.createEmailDeliveryFailure(email.getFrom(), error);
+            ServerSpecificEmail failureMail = TransferSenderPreparation.createEmailDeliveryFailure(email.getFrom(), error, repo.getServerSocket().getInetAddress().getHostAddress());
             repo.getForwardPool().execute(new TransferSenderTask(failureMail, repo));
         } catch (DomainLookUpException ignored) {}
     }

@@ -14,7 +14,7 @@ import java.util.concurrent.Executors;
 public class TransferRepository extends ConcurrentWorkerRepository {
 
     private final ExecutorService connectionPool = Executors.newCachedThreadPool();
-    private final Executor forwardPool = Executors.newFixedThreadPool(3);
+    private final Executor forwardPool = Executors.newFixedThreadPool(4);
     private final Config config;
     private ServerSocket serverSocket;
     private List<TransferSenderTask> activeSenderTasks = Collections.synchronizedList(new ArrayList<>());
