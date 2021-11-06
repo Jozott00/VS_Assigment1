@@ -26,7 +26,7 @@ public class MailboxServer implements IMailboxServer, Runnable {
     private Shell shell;
 
     private final ExecutorService dmapConnectionPool = Executors.newCachedThreadPool();
-    private final ExecutorService dmtpConnectionPool = Executors.newFixedThreadPool(4);
+    private final ExecutorService dmtpConnectionPool = Executors.newFixedThreadPool(10);
 
     private Boolean shutdown = false;
 

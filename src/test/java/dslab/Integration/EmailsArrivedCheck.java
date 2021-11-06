@@ -26,12 +26,12 @@ import static org.junit.Assert.assertEquals;
 public class EmailsArrivedCheck extends TestBase {
 
     private static final Log LOG = LogFactory.getLog(EmailsArrivedCheck.class);
-    private static final int num_users = 150; // divisible by 2
-    private static final int mails_per_connection = 10;
+    private static final int num_users = 100; // divisible by 2
+    private static final int mails_per_connection = 5;
     private static final int mailRunner = 5;
     private AssertionError threadedAssertion;
 
-    private static final int checkRunner = 5;
+    private static final int checkRunner = 10;
 
     private String mailboxComponentId = "mailbox-earth-planet";
     private IMailboxServer mailbox;
@@ -271,8 +271,12 @@ public class EmailsArrivedCheck extends TestBase {
             String activeThreads = servers.stream()
                 .filter(s -> s.contains("ActiveThreads:"))
                 .findFirst().orElse("notfound 1");
+            String queue = servers.stream()
+                .filter(s -> s.contains("Queue:"))
+                .findFirst().orElse("notfound 0");
             int activeThreadsCount = Integer.parseInt(activeThreads.split(" ")[1]);
-            LOG.info(String.format("%d threads are transfering mails", activeThreadsCount));
+            int queueCount = Integer.parseInt(queue.split(" ")[1]);
+            LOG.info(String.format("%d threads are transfering mails and %d are in queue", activeThreadsCount, queueCount));
             if( activeThreadsCount == 0) {
                 break;
             }
